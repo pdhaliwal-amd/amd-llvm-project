@@ -2247,7 +2247,6 @@ int32_t __tgt_rtl_run_target_team_region_locked(
     }
     {
       if (ArgPool) {
-        assert(ArgPool->kernarg_segment_size == (arg_num * sizeof(void *)));
         kernarg = ArgPool->allocate(arg_num);
       }
       if (!kernarg) {
@@ -2257,8 +2256,15 @@ int32_t __tgt_rtl_run_target_team_region_locked(
 
       // Copy explicit arguments
       for (int i = 0; i < arg_num; i++) {
-        memcpy((char *)kernarg + sizeof(void *) * i, args[i], sizeof(void *));
+        //fprintf(stderr, "Copying %d bytes from %p (%p) to %p+%d\n", Sizes[i], args[i], ptrs[i], kernarg, offset);
+        memcpy((char *)kernarg + offset, (char*)args[i], Sizes[i]);
+        offset += Sizes[i];
       }
+
+      for (int i = 0; i < offset; i+=4) {
+        //fprintf(stderr, "%08x ", *((int*)kernarg + i));
+      }
+      //fprintf(stderr, "\n");
 
       // Initialize implicit arguments. TODO: Which of these can be dropped
       impl_implicit_args_t *impl_args =

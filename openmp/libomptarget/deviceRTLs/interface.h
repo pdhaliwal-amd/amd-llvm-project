@@ -505,5 +505,15 @@ EXTERN void __kmpc_free_shared(void *Ptr, size_t Bytes);
 
 /// Get a pointer to the dynamic shared memory buffer in the device.
 EXTERN void *__kmpc_get_dynamic_shared();
+/// Allocate \p Bytes for an aggregate argument of an outlined parallel region,
+/// either using a local memory allocation, pointed by \p LocalPtr, when in SPMD
+/// mode, or from shared memory by calling __kmpc_alloc_shared.
+EXTERN void *__kmpc_alloc_aggregate_arg(void *LocalPtr, uint64_t Bytes);
+
+/// Free a previous allocated aggregate argument of an outlined parallel region.
+/// If in SPMD mode the argument will free as an automatic variable, otherwise
+/// the function calls __kmpc_free_shared using the \p Ptr argument that points
+/// to shared memory of size \p Bytes.
+EXTERN void __kmpc_free_aggregate_arg(void *Ptr, uint64_t Bytes);
 
 #endif
