@@ -289,7 +289,7 @@ int32_t __tgt_rtl_data_delete(int32_t device_id, void *tgt_ptr) {
 
 int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
                                          void **tgt_args,
-                                         ptrdiff_t *tgt_offsets,
+                                         ptrdiff_t *tgt_offsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                          int32_t arg_num, int32_t team_num,
                                          int32_t thread_limit,
                                          uint64_t loop_tripcount /*not used*/) {
@@ -325,11 +325,11 @@ int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
 }
 
 int32_t __tgt_rtl_run_target_region(int32_t device_id, void *tgt_entry_ptr,
-                                    void **tgt_args, ptrdiff_t *tgt_offsets,
+                                    void **tgt_args, ptrdiff_t *tgt_offsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                     int32_t arg_num) {
   // use one team and one thread.
   return __tgt_rtl_run_target_team_region(device_id, tgt_entry_ptr, tgt_args,
-                                          tgt_offsets, arg_num, 1, 1, 0);
+                                          tgt_offsets, ArgTypes, ArgSizes,arg_num, 1, 1, 0);
 }
 
 #ifdef __cplusplus

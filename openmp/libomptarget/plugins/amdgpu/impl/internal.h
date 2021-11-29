@@ -33,6 +33,39 @@
 
 #define MAX_NUM_KERNELS (1024 * 16)
 
+class KernelArgMD {
+public:
+  enum class ValueKind {
+    ByValue,
+    GlobalBuffer,
+    DynamicSharedPointer,
+    Sampler,
+    Image,
+    Pipe,
+    Queue,
+    HiddenGlobalOffsetX,
+    HiddenGlobalOffsetY,
+    HiddenGlobalOffsetZ,
+    HiddenNone,
+    HiddenPrintfBuffer,
+    HiddenDefaultQueue,
+    HiddenCompletionAction,
+    HiddenMultiGridSyncArg,
+    HiddenHostcallBuffer,
+    Unknown
+  };
+
+  KernelArgMD()
+      : name_(std::string()),  size_(0), offset_(0),
+        valueKind_(ValueKind::Unknown) {}
+
+  // fields
+  std::string name_;
+  uint32_t size_;
+  uint32_t offset_;
+  ValueKind valueKind_;
+};
+
 typedef struct impl_implicit_args_s {
   unsigned long offset_x;
   unsigned long offset_y;
@@ -55,6 +88,7 @@ typedef struct atl_kernel_info_s {
   uint32_t vgpr_spill_count;
   uint32_t kernel_segment_size;
   uint32_t num_args;
+  std::vector<KernelArgMD> args;
 } atl_kernel_info_t;
 
 typedef struct atl_symbol_info_s {

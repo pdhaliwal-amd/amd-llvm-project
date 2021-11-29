@@ -46,42 +46,16 @@ typedef struct {
 } Elf_Note;
 #endif
 
-class KernelArgMD {
-public:
-  enum class ValueKind {
-    HiddenGlobalOffsetX,
-    HiddenGlobalOffsetY,
-    HiddenGlobalOffsetZ,
-    HiddenNone,
-    HiddenPrintfBuffer,
-    HiddenDefaultQueue,
-    HiddenCompletionAction,
-    HiddenMultiGridSyncArg,
-    HiddenHostcallBuffer,
-    Unknown
-  };
-
-  KernelArgMD()
-      : name_(std::string()),  size_(0), offset_(0),
-        valueKind_(ValueKind::Unknown) {}
-
-  // fields
-  std::string name_;
-  uint32_t size_;
-  uint32_t offset_;
-  ValueKind valueKind_;
-};
-
 static const std::map<std::string, KernelArgMD::ValueKind> ArgValueKind = {
     // v3
-    //    {"by_value", KernelArgMD::ValueKind::ByValue},
-    //    {"global_buffer", KernelArgMD::ValueKind::GlobalBuffer},
-    //    {"dynamic_shared_pointer",
-    //    KernelArgMD::ValueKind::DynamicSharedPointer},
-    //    {"sampler", KernelArgMD::ValueKind::Sampler},
-    //    {"image", KernelArgMD::ValueKind::Image},
-    //    {"pipe", KernelArgMD::ValueKind::Pipe},
-    //    {"queue", KernelArgMD::ValueKind::Queue},
+    {"by_value", KernelArgMD::ValueKind::ByValue},
+    {"global_buffer", KernelArgMD::ValueKind::GlobalBuffer},
+    {"dynamic_shared_pointer",
+      KernelArgMD::ValueKind::DynamicSharedPointer},
+    {"sampler", KernelArgMD::ValueKind::Sampler},
+    {"image", KernelArgMD::ValueKind::Image},
+    {"pipe", KernelArgMD::ValueKind::Pipe},
+    {"queue", KernelArgMD::ValueKind::Queue},
     {"hidden_global_offset_x", KernelArgMD::ValueKind::HiddenGlobalOffsetX},
     {"hidden_global_offset_y", KernelArgMD::ValueKind::HiddenGlobalOffsetY},
     {"hidden_global_offset_z", KernelArgMD::ValueKind::HiddenGlobalOffsetZ},
@@ -481,6 +455,7 @@ static hsa_status_t get_code_object_custom_metadata(
           hasHiddenArgs = true;
         }
         kernel_explicit_args_size += padding;
+        info.args.push_back(lcArg);
       }
     }
 

@@ -560,17 +560,15 @@ EXTERN int __tgt_target_teams_mapper(ident_t *loc, int64_t device_id,
     return OMP_TGT_FAIL;
   }
 
-  if (getInfoLevel() & OMP_INFOTYPE_KERNEL_ARGS)
+  //if (getInfoLevel() & OMP_INFOTYPE_KERNEL_ARGS)
     printKernelArguments(loc, device_id, arg_num, arg_sizes, arg_types,
                          arg_names, "Entering OpenMP kernel");
-#ifdef OMPTARGET_DEBUG
   for (int i = 0; i < arg_num; ++i) {
     DP("Entry %2d: Base=" DPxMOD ", Begin=" DPxMOD ", Size=%" PRId64
        ", Type=0x%" PRIx64 ", Name=%s\n",
        i, DPxPTR(args_base[i]), DPxPTR(args[i]), arg_sizes[i], arg_types[i],
        (arg_names) ? getNameFromMapping(arg_names[i]).c_str() : "unknown");
   }
-#endif
 
   DeviceTy &Device = *PM->Devices[device_id];
   AsyncInfoTy AsyncInfo(Device);

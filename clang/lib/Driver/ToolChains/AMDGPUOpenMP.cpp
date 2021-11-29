@@ -656,6 +656,9 @@ void AMDGPUOpenMPToolChain::addClangTargetOptions(
         {DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libomptarget-amdgcn-" + GPUArch + ".bc"),
          DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libdevice/libaompextras-amdgcn-" + GPUArch + ".bc"),
          "/home/pdhaliwal/rocm/aomp/amdgcn/bitcode/ockl.bc", DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libdevice/libbc-hostrpc-amdgcn.a"),
+         "/home/pdhaliwal/rocm/aomp/lib/libdevice/hostrpc-amdgcn.bc",
+         DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libomptarget-amdgcn-" + GPUArch + ".bc"),
+         "/home/pdhaliwal/rocm/aomp/amdgcn/bitcode/oclc_finite_only_on.bc",
          "/home/pdhaliwal/rocm/aomp/amdgcn/bitcode/" + std::string(WaveFrontSizeBC) });
   }
 
@@ -665,12 +668,7 @@ void AMDGPUOpenMPToolChain::addClangTargetOptions(
         getCommonDeviceLibNames(DriverArgs, GPUArch.str());
     for (auto Lib : BCLibsT)
       BCLibs.push_back(Lib);
-    std::set<std::string> BCLibsSet;
-    for (auto Lib : BCLibs) {
-      if (!Lib.empty())
-        BCLibsSet.insert(Lib);
-    }
-    std::for_each(BCLibsSet.begin(), BCLibsSet.end(), [&](StringRef BCFile) {
+    std::for_each(BCLibs.begin(), BCLibs.end(), [&](StringRef BCFile) {
       CC1Args.push_back("-mlink-builtin-bitcode");
       CC1Args.push_back(DriverArgs.MakeArgString(BCFile));
     });

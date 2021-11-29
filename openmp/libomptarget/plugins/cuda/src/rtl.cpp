@@ -1531,7 +1531,7 @@ int32_t __tgt_rtl_data_delete(int32_t device_id, void *tgt_ptr) {
 
 int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
                                          void **tgt_args,
-                                         ptrdiff_t *tgt_offsets,
+                                         ptrdiff_t *tgt_offsets, int64_t *ArgTypes, int64_t *ArgSizes,
                                          int32_t arg_num, int32_t team_num,
                                          int32_t thread_limit,
                                          uint64_t loop_tripcount) {
@@ -1539,7 +1539,7 @@ int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
 
   __tgt_async_info AsyncInfo;
   const int32_t rc = __tgt_rtl_run_target_team_region_async(
-      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, arg_num, team_num,
+      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, ArgTypes, ArgSizes, arg_num, team_num,
       thread_limit, loop_tripcount, &AsyncInfo);
   if (rc != OFFLOAD_SUCCESS)
     return OFFLOAD_FAIL;
@@ -1549,7 +1549,7 @@ int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
 
 int32_t __tgt_rtl_run_target_team_region_async(
     int32_t device_id, void *tgt_entry_ptr, void **tgt_args,
-    ptrdiff_t *tgt_offsets, int32_t arg_num, int32_t team_num,
+    ptrdiff_t *tgt_offsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t arg_num, int32_t team_num,
     int32_t thread_limit, uint64_t loop_tripcount,
     __tgt_async_info *async_info_ptr) {
   assert(DeviceRTL.isValidDeviceId(device_id) && "device_id is invalid");
@@ -1560,13 +1560,13 @@ int32_t __tgt_rtl_run_target_team_region_async(
 }
 
 int32_t __tgt_rtl_run_target_region(int32_t device_id, void *tgt_entry_ptr,
-                                    void **tgt_args, ptrdiff_t *tgt_offsets,
+                                    void **tgt_args, ptrdiff_t *tgt_offsets, int64_t *ArgTypes, int64_t *ArgSizes,
                                     int32_t arg_num) {
   assert(DeviceRTL.isValidDeviceId(device_id) && "device_id is invalid");
 
   __tgt_async_info AsyncInfo;
   const int32_t rc = __tgt_rtl_run_target_region_async(
-      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, arg_num, &AsyncInfo);
+      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, ArgTypes, ArgSizes, arg_num, &AsyncInfo);
   if (rc != OFFLOAD_SUCCESS)
     return OFFLOAD_FAIL;
 
@@ -1575,13 +1575,13 @@ int32_t __tgt_rtl_run_target_region(int32_t device_id, void *tgt_entry_ptr,
 
 int32_t __tgt_rtl_run_target_region_async(int32_t device_id,
                                           void *tgt_entry_ptr, void **tgt_args,
-                                          ptrdiff_t *tgt_offsets,
+                                          ptrdiff_t *tgt_offsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                           int32_t arg_num,
                                           __tgt_async_info *async_info_ptr) {
   assert(DeviceRTL.isValidDeviceId(device_id) && "device_id is invalid");
 
   return __tgt_rtl_run_target_team_region_async(
-      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, arg_num,
+      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, ArgTypes, ArgSizes,arg_num,
       /* team num*/ 1, /* thread_limit */ 1, /* loop_tripcount */ 0,
       async_info_ptr);
 }

@@ -104,14 +104,14 @@ int32_t __tgt_rtl_data_exchange(int32_t SrcDevId, void *SrcPtr,
 
 
 int32_t __tgt_rtl_run_target_region(int32_t DeviceId, void *TgtEntryPtr,
-                                    void **TgtArgs, ptrdiff_t *TgtOffsets,
+                                    void **TgtArgs, ptrdiff_t *TgtOffsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                     int32_t ArgNum) {
   return Manager->runTargetRegion(DeviceId, TgtEntryPtr, TgtArgs, TgtOffsets,
                                   ArgNum);
 }
 
 int32_t __tgt_rtl_run_target_team_region(int32_t DeviceId, void *TgtEntryPtr,
-                                         void **TgtArgs, ptrdiff_t *TgtOffsets,
+                                         void **TgtArgs, ptrdiff_t *TgtOffsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                          int32_t ArgNum, int32_t TeamNum,
                                          int32_t ThreadLimit,
                                          uint64_t LoopTripCount) {

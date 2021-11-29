@@ -177,7 +177,7 @@ public:
   }
 
   void *allocate(uint64_t arg_num) {
-    assert((arg_num * sizeof(void *)) == kernarg_segment_size);
+    //assert((arg_num * sizeof(void *)) == kernarg_segment_size);
     lock l(&mutex);
     void *res = nullptr;
     if (!free_kernarg_segments.empty()) {
@@ -2114,19 +2114,19 @@ static uint64_t acquire_available_packet_id(hsa_queue_t *queue) {
 
 static int32_t __tgt_rtl_run_target_team_region_locked(
     int32_t device_id, void *tgt_entry_ptr, void **tgt_args,
-    ptrdiff_t *tgt_offsets, int32_t arg_num, int32_t num_teams,
+    ptrdiff_t *tgt_offsets, int64_t *ArgTypes, int64_t *ArgSizes,int32_t arg_num, int32_t num_teams,
     int32_t thread_limit, uint64_t loop_tripcount);
 
 int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
                                          void **tgt_args,
-                                         ptrdiff_t *tgt_offsets,
+                                         ptrdiff_t *tgt_offsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                          int32_t arg_num, int32_t num_teams,
                                          int32_t thread_limit,
                                          uint64_t loop_tripcount) {
 
   DeviceInfo.load_run_lock.lock_shared();
   int32_t res = __tgt_rtl_run_target_team_region_locked(
-      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, arg_num, num_teams,
+      device_id, tgt_entry_ptr, tgt_args, tgt_offsets, ArgTypes, ArgSizes,arg_num, num_teams,
       thread_limit, loop_tripcount);
 
   DeviceInfo.load_run_lock.unlock_shared();
@@ -2135,7 +2135,7 @@ int32_t __tgt_rtl_run_target_team_region(int32_t device_id, void *tgt_entry_ptr,
 
 int32_t __tgt_rtl_run_target_team_region_locked(
     int32_t device_id, void *tgt_entry_ptr, void **tgt_args,
-    ptrdiff_t *tgt_offsets, int32_t arg_num, int32_t num_teams,
+    ptrdiff_t *tgt_offsets, int64_t *ArgTypes, int64_t *ArgSizes,int32_t arg_num, int32_t num_teams,
     int32_t thread_limit, uint64_t loop_tripcount) {
   // Set the context we are using
   // update thread limit content in gpu memory if un-initialized or specified
@@ -2171,6 +2171,10 @@ int32_t __tgt_rtl_run_target_team_region_locked(
   const uint32_t vgpr_count = KernelInfoEntry.vgpr_count;
   const uint32_t sgpr_spill_count = KernelInfoEntry.sgpr_spill_count;
   const uint32_t vgpr_spill_count = KernelInfoEntry.vgpr_spill_count;
+  const std::vector<KernelArgMD> FormalArguments = KernelInfoEntry.args;
+  for (const auto &FormalArgument : FormalArguments) {
+    //fprintf(stderr, "Arg: %s, size: %d, offset: %d\n", FormalArgument.name_.c_str(), FormalArgument.size_, FormalArgument.offset_);
+  }
 
   assert(arg_num == (int)KernelInfoEntry.num_args);
 
@@ -2254,18 +2258,19 @@ int32_t __tgt_rtl_run_target_team_region_locked(
         return OFFLOAD_FAIL;
       }
 
+      std::vector<int> Sizes;
+      for (int i = 0; i < arg_num; i++) {
+        if (ArgTypes[i] & OMP_TGT_MAPTYPE_LITERAL) {
+          Sizes.push_back(ArgSizes[i]);
+        } else {
+          Sizes.push_back(sizeof(void*));
+        }
+      }
+
       // Copy explicit arguments
       for (int i = 0; i < arg_num; i++) {
-        //fprintf(stderr, "Copying %d bytes from %p (%p) to %p+%d\n", Sizes[i], args[i], ptrs[i], kernarg, offset);
-        memcpy((char *)kernarg + offset, (char*)args[i], Sizes[i]);
-        offset += Sizes[i];
+        memcpy((char *)kernarg + FormalArguments[i].offset_, (char*)args[i], FormalArguments[i].size_);
       }
-
-      for (int i = 0; i < offset; i+=4) {
-        //fprintf(stderr, "%08x ", *((int*)kernarg + i));
-      }
-      //fprintf(stderr, "\n");
-
       // Initialize implicit arguments. TODO: Which of these can be dropped
       impl_implicit_args_t *impl_args =
           reinterpret_cast<impl_implicit_args_t *>(
@@ -2325,20 +2330,20 @@ int32_t __tgt_rtl_run_target_team_region_locked(
 }
 
 int32_t __tgt_rtl_run_target_region(int32_t device_id, void *tgt_entry_ptr,
-                                    void **tgt_args, ptrdiff_t *tgt_offsets,
+                                    void **tgt_args, ptrdiff_t *tgt_offsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                     int32_t arg_num) {
   // use one team and one thread
   // fix thread num
   int32_t team_num = 1;
   int32_t thread_limit = 0; // use default
   return __tgt_rtl_run_target_team_region(device_id, tgt_entry_ptr, tgt_args,
-                                          tgt_offsets, arg_num, team_num,
+                                          tgt_offsets, ArgTypes, ArgSizes,arg_num, team_num,
                                           thread_limit, 0);
 }
 
 int32_t __tgt_rtl_run_target_region_async(int32_t device_id,
                                           void *tgt_entry_ptr, void **tgt_args,
-                                          ptrdiff_t *tgt_offsets,
+                                          ptrdiff_t *tgt_offsets,int64_t *ArgTypes, int64_t *ArgSizes,
                                           int32_t arg_num,
                                           __tgt_async_info *AsyncInfo) {
   assert(AsyncInfo && "AsyncInfo is nullptr");
@@ -2349,7 +2354,7 @@ int32_t __tgt_rtl_run_target_region_async(int32_t device_id,
   int32_t team_num = 1;
   int32_t thread_limit = 0; // use default
   return __tgt_rtl_run_target_team_region(device_id, tgt_entry_ptr, tgt_args,
-                                          tgt_offsets, arg_num, team_num,
+                                          tgt_offsets, ArgTypes, ArgSizes,arg_num, team_num,
                                           thread_limit, 0);
 }
 

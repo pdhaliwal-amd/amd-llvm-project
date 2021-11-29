@@ -1464,11 +1464,11 @@ int target(ident_t *loc, DeviceTy &Device, void *HostPtr, int32_t ArgNum,
     TIMESCOPE_WITH_NAME_AND_IDENT(
         IsTeamConstruct ? "runTargetTeamRegion" : "runTargetRegion", loc);
     if (IsTeamConstruct)
-      Ret = Device.runTeamRegion(TgtEntryPtr, &TgtArgs[0], &TgtOffsets[0],
+      Ret = Device.runTeamRegion(TgtEntryPtr, &TgtArgs[0], &TgtOffsets[0], ArgTypes, ArgSizes,
                                  TgtArgs.size(), TeamNum, ThreadLimit,
                                  getLoopTripCount(DeviceId), AsyncInfo);
     else
-      Ret = Device.runRegion(TgtEntryPtr, &TgtArgs[0], &TgtOffsets[0],
+      Ret = Device.runRegion(TgtEntryPtr, &TgtArgs[0], &TgtOffsets[0],ArgTypes, ArgSizes,
                              TgtArgs.size(), AsyncInfo);
   }
 

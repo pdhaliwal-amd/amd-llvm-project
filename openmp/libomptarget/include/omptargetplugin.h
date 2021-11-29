@@ -112,11 +112,11 @@ int32_t __tgt_rtl_data_delete(int32_t ID, void *TargetPtr);
 // ignored on some platforms, like x86_64. In that case, it is synchronous. In
 // case of success, return zero. Otherwise, return an error code.
 int32_t __tgt_rtl_run_target_region(int32_t ID, void *Entry, void **Args,
-                                    ptrdiff_t *Offsets, int32_t NumArgs);
+                                    ptrdiff_t *Offsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t NumArgs);
 
 // Asynchronous version of __tgt_rtl_run_target_region
 int32_t __tgt_rtl_run_target_region_async(int32_t ID, void *Entry, void **Args,
-                                          ptrdiff_t *Offsets, int32_t NumArgs,
+                                          ptrdiff_t *Offsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t NumArgs,
                                           __tgt_async_info *AsyncInfo);
 
 // Similar to __tgt_rtl_run_target_region, but additionally specify the
@@ -125,13 +125,13 @@ int32_t __tgt_rtl_run_target_region_async(int32_t ID, void *Entry, void **Args,
 // However, AsyncInfo may be ignored on some platforms, like x86_64. In that
 // case, it is synchronous.
 int32_t __tgt_rtl_run_target_team_region(int32_t ID, void *Entry, void **Args,
-                                         ptrdiff_t *Offsets, int32_t NumArgs,
+                                         ptrdiff_t *Offsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t NumArgs,
                                          int32_t NumTeams, int32_t ThreadLimit,
                                          uint64_t loop_tripcount);
 
 // Asynchronous version of __tgt_rtl_run_target_team_region
 int32_t __tgt_rtl_run_target_team_region_async(
-    int32_t ID, void *Entry, void **Args, ptrdiff_t *Offsets, int32_t NumArgs,
+    int32_t ID, void *Entry, void **Args, ptrdiff_t *Offsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t NumArgs,
     int32_t NumTeams, int32_t ThreadLimit, uint64_t loop_tripcount,
     __tgt_async_info *AsyncInfo);
 

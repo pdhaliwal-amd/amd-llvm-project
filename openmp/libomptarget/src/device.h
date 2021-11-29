@@ -339,10 +339,11 @@ struct DeviceTy {
   int32_t dataExchange(void *SrcPtr, DeviceTy &DstDev, void *DstPtr,
                        int64_t Size, AsyncInfoTy &AsyncInfo);
 
-  int32_t runRegion(void *TgtEntryPtr, void **TgtVarsPtr, ptrdiff_t *TgtOffsets,
+  int32_t runRegion(void *TgtEntryPtr, void **TgtVarsPtr, ptrdiff_t *TgtOffsets,int64_t *ArgTypes, int64_t *ArgSizes,
                     int32_t TgtVarsSize, AsyncInfoTy &AsyncInfo);
   int32_t runTeamRegion(void *TgtEntryPtr, void **TgtVarsPtr,
-                        ptrdiff_t *TgtOffsets, int32_t TgtVarsSize,
+                        ptrdiff_t *TgtOffsets, int64_t *ArgTypes, int64_t *ArgSizes,
+                        int32_t TgtVarsSize,
                         int32_t NumTeams, int32_t ThreadLimit,
                         uint64_t LoopTripCount, AsyncInfoTy &AsyncInfo);
 

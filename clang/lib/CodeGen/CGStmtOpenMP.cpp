@@ -391,7 +391,7 @@ void CodeGenFunction::GenerateOpenMPCapturedVars(
 
       // If the field is not a pointer, we need to save the actual value
       // and load it as a void pointer.
-      if (!CurField->getType()->isAnyPointerType()) {
+      if (!CurField->getType()->isAnyPointerType() && false) {
         ASTContext &Ctx = getContext();
         Address DstAddr = CreateMemTemp(
             Ctx.getUIntPtrType(),
@@ -845,7 +845,7 @@ CodeGenFunction::GenerateOpenMPCapturedStmtFunction(const CapturedStmt &S,
   bool isKernel = (Out.str().find("__omp_offloading_") != std::string::npos);
   if (NeedWrapperFunction)
     Out << "_debug__";
-  FunctionOptions FO(&S, !NeedWrapperFunction, /*RegisterCastedArgsOnly=*/false,
+  FunctionOptions FO(&S, NeedWrapperFunction && !CGM.getTriple().isAMDGCN(), /*RegisterCastedArgsOnly=*/false,
                      Out.str(), Loc);
   llvm::Function *F = emitOutlinedFunctionPrologue(
       *this, Args, LocalAddrs, VLASizes, CXXThisValue, FO, isKernel);

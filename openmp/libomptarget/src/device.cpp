@@ -520,14 +520,14 @@ int32_t DeviceTy::dataExchange(void *SrcPtr, DeviceTy &DstDev, void *DstPtr,
 
 // Run region on device
 int32_t DeviceTy::runRegion(void *TgtEntryPtr, void **TgtVarsPtr,
-                            ptrdiff_t *TgtOffsets, int32_t TgtVarsSize,
+                            ptrdiff_t *TgtOffsets, int64_t *ArgTypes, int64_t *ArgSizes,int32_t TgtVarsSize,
                             AsyncInfoTy &AsyncInfo) {
   if (!RTL->run_region || !RTL->synchronize)
-    return RTL->run_region(RTLDeviceID, TgtEntryPtr, TgtVarsPtr, TgtOffsets,
+    return RTL->run_region(RTLDeviceID, TgtEntryPtr, TgtVarsPtr, TgtOffsets,ArgTypes, ArgSizes,
                            TgtVarsSize);
   else
     return RTL->run_region_async(RTLDeviceID, TgtEntryPtr, TgtVarsPtr,
-                                 TgtOffsets, TgtVarsSize, AsyncInfo);
+                                 TgtOffsets, ArgTypes, ArgSizes,TgtVarsSize, AsyncInfo);
 }
 
 // Run region on device
@@ -540,17 +540,17 @@ bool DeviceTy::printDeviceInfo(int32_t RTLDevId) {
 
 // Run team region on device.
 int32_t DeviceTy::runTeamRegion(void *TgtEntryPtr, void **TgtVarsPtr,
-                                ptrdiff_t *TgtOffsets, int32_t TgtVarsSize,
+                                ptrdiff_t *TgtOffsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t TgtVarsSize,
                                 int32_t NumTeams, int32_t ThreadLimit,
                                 uint64_t LoopTripCount,
                                 AsyncInfoTy &AsyncInfo) {
   if (!RTL->run_team_region_async || !RTL->synchronize)
     return RTL->run_team_region(RTLDeviceID, TgtEntryPtr, TgtVarsPtr,
-                                TgtOffsets, TgtVarsSize, NumTeams, ThreadLimit,
+                                TgtOffsets, ArgTypes, ArgSizes, TgtVarsSize, NumTeams, ThreadLimit,
                                 LoopTripCount);
   else
     return RTL->run_team_region_async(RTLDeviceID, TgtEntryPtr, TgtVarsPtr,
-                                      TgtOffsets, TgtVarsSize, NumTeams,
+                                      TgtOffsets, ArgTypes, ArgSizes, TgtVarsSize, NumTeams,
                                       ThreadLimit, LoopTripCount, AsyncInfo);
 }
 
