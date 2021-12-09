@@ -444,6 +444,8 @@ __OMP_RTL(__kmpc_shuffle_int64, false, Int64, Int64, Int16, Int16)
 
 __OMP_RTL(__kmpc_alloc_shared, false, VoidPtr, SizeTy)
 __OMP_RTL(__kmpc_free_shared, false, Void, VoidPtr, SizeTy)
+__OMP_RTL(__kmpc_alloc_aggregate_arg, false, VoidPtr, VoidPtr, SizeTy)
+__OMP_RTL(__kmpc_free_aggregate_arg, false, Void, VoidPtr, SizeTy)
 __OMP_RTL(__kmpc_begin_sharing_variables, false, Void, VoidPtrPtrPtr, SizeTy)
 __OMP_RTL(__kmpc_end_sharing_variables, false, Void, )
 __OMP_RTL(__kmpc_get_shared_variables, false, Void, VoidPtrPtrPtr)
@@ -904,6 +906,11 @@ __OMP_RTL_ATTRS(__kmpc_doacross_fini, BarrierAttrs, AttributeSet(),
 __OMP_RTL_ATTRS(__kmpc_alloc_shared, DeviceAllocAttrs, ReturnPtrAttrs,
                 ParamAttrs())
 __OMP_RTL_ATTRS(__kmpc_free_shared, DeviceAllocAttrs, AttributeSet(),
+                ParamAttrs(NoCaptureAttrs))
+
+__OMP_RTL_ATTRS(__kmpc_alloc_aggregate_arg, DeviceAllocAttrs, ReturnPtrAttrs,
+                ParamAttrs())
+__OMP_RTL_ATTRS(__kmpc_free_aggregate_arg, DeviceAllocAttrs, AttributeSet(),
                 ParamAttrs(NoCaptureAttrs))
 
 __OMP_RTL_ATTRS(__kmpc_alloc, DefaultAttrs, ReturnPtrAttrs, ParamAttrs())

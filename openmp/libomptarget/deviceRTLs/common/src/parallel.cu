@@ -342,7 +342,6 @@ NOINLINE EXTERN void __kmpc_parallel_51(kmp_Ident *ident, kmp_int32 global_tid,
                                         kmp_int32 num_threads, int proc_bind,
                                         void *fn, void *wrapper_fn, void **args,
                                         size_t nargs) {
-
   PRINT0(LD_IO | LD_PAR, "call kmpc_parallel_51\n");
   // Handle the serialized case first, same for SPMD/non-SPMD
   bool InParallelRegion = (__kmpc_parallel_level() > 0);
@@ -425,6 +424,13 @@ NOINLINE EXTERN void __kmpc_parallel_51(kmp_Ident *ident, kmp_int32 global_tid,
   // TODO: proc_bind is a noop?
   // if (proc_bind != proc_bind_default)
   //  __kmpc_push_proc_bind(ident, global_tid, proc_bind);
+}
+
+extern "C" void printPtr(void *a, int id) {
+  printf("P%d: %p\n", id, a);
+}
+extern "C" void printInt(int a, int id) {
+  printf("I%d: %x\n", id, a);
 }
 
 #pragma omp end declare target

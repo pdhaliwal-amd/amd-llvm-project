@@ -92,6 +92,15 @@ EXTERN void __kmpc_free_shared(void *Ptr, size_t Bytes) {
   SafeFree(Ptr, "FreeGlobalFallback");
 }
 
+EXTERN void *__kmpc_alloc_aggregate_arg(void *LocalPtr, size_t Bytes) {
+  return (__kmpc_is_spmd_exec_mode() ? LocalPtr : __kmpc_alloc_shared(Bytes));
+}
+
+EXTERN void __kmpc_free_aggregate_arg(void *Ptr, size_t Bytes) {
+  if (!__kmpc_is_spmd_exec_mode())
+    __kmpc_free_shared(Ptr, Bytes);
+}
+
 EXTERN void __kmpc_data_sharing_init_stack() {
   for (unsigned i = 0; i < MainSharedStack.NumWarps; ++i)
     MainSharedStack.Usage[i] = 0;

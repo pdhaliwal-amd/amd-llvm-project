@@ -405,7 +405,7 @@ int32_t __tgt_rtl_data_delete(int32_t ID, void *TargetPtr) {
 // Similar to __tgt_rtl_run_target_region, but additionally specify the
 // number of teams to be created and a number of threads in each team.
 int32_t __tgt_rtl_run_target_team_region(int32_t ID, void *Entry, void **Args,
-                                         ptrdiff_t *Offsets, int32_t NumArgs,
+                                         ptrdiff_t *Offsets, int64_t *ArgTypes, int64_t *ArgSizes, int32_t NumArgs,
                                          int32_t NumTeams, int32_t ThreadLimit,
                                          uint64_t loop_tripcount) {
   int ret;
@@ -447,8 +447,8 @@ int32_t __tgt_rtl_run_target_team_region(int32_t ID, void *Entry, void **Args,
 // to the outlined function on device side. In case of success, return zero.
 // Otherwise, return an error code.
 int32_t __tgt_rtl_run_target_region(int32_t ID, void *Entry, void **Args,
-                                    ptrdiff_t *Offsets, int32_t NumArgs) {
-  return __tgt_rtl_run_target_team_region(ID, Entry, Args, Offsets, NumArgs, 1,
+                                    ptrdiff_t *Offsets, int64_t *ArgTypes, int64_t *ArgSizes,int32_t NumArgs) {
+  return __tgt_rtl_run_target_team_region(ID, Entry, Args, Offsets, ArgTypes, ArgSizes,NumArgs, 1,
                                           1, 0);
 }
 

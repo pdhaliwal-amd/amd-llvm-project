@@ -201,10 +201,11 @@ const char *AMDGCN::OpenMPLinker::constructOmpExtraCmds(
                    options::OPT_fno_gpu_sanitize, false)) {
     BCLibs.push_back("asanrtl.bc");
   }
-
+#if 0
   for (auto Lib : BCLibs)
     addBCLib(C.getDriver(), Args, CmdArgs, LibraryPaths, Lib,
              /* PostClang Link? */ false);
+#endif
 
   // This will find .a and .bc files that match naming convention.
   AddStaticDeviceLibsLinking(C, *this, JA, Inputs, Args, CmdArgs, "amdgcn",
@@ -266,41 +267,6 @@ const char *AMDGCN::OpenMPLinker::constructLLVMLinkCommand(
     SplitString(OptEnv.getValue(), Envs);
     for (StringRef Env : Envs)
       CmdArgs.push_back(Args.MakeArgString(Env.trim()));
-  }
-
-  if (Args.hasArg(options::OPT_l)) {
-    auto Lm = Args.getAllArgValues(options::OPT_l);
-    bool HasLibm = false;
-    for (auto &Lib : Lm) {
-      if (Lib == "m") {
-        HasLibm = true;
-        break;
-      }
-    }
-
-    if (HasLibm) {
-      // This is not certain to work. The device libs added here, and passed to
-      // llvm-link, are missing attributes that they expect to be inserted when
-      // passed to mlink-builtin-bitcode. The amdgpu backend does not generate
-      // conservatively correct code when attributes are missing, so this may
-      // be the root cause of miscompilations. Passing via mlink-builtin-bitcode
-      // ultimately hits CodeGenModule::addDefaultFunctionDefinitionAttributes
-      // on each function, see D28538 for context.
-      // Potential workarounds:
-      //  - unconditionally link all of the device libs to every translation
-      //    unit in clang via mlink-builtin-bitcode
-      //  - build a libm bitcode file as part of the DeviceRTL and explictly
-      //    mlink-builtin-bitcode the rocm device libs components at build time
-      //  - drop this llvm-link fork in favour or some calls into LLVM, chosen
-      //    to do basically the same work as llvm-link but with that call first
-      //  - write an opt pass that sets that on every function it sees and pipe
-      //    the device-libs bitcode through that on the way to this llvm-link
-      SmallVector<std::string, 12> BCLibs =
-          AMDGPUOpenMPTC.getCommonDeviceLibNames(Args, TargetID.str());
-      llvm::for_each(BCLibs, [&](StringRef BCFile) {
-        CmdArgs.push_back(Args.MakeArgString(BCFile));
-      });
-    }
   }
   // Add an intermediate output file.
   CmdArgs.push_back("-o");
@@ -638,7 +604,11 @@ void AMDGPUOpenMPToolChain::addClangTargetOptions(
   addDirectoryList(DriverArgs, LibraryPaths, "", "HIP_DEVICE_LIB_PATH");
 
   // Maintain compatability with --hip-device-lib.
-  auto BCLibs = DriverArgs.getAllArgValues(options::OPT_hip_device_lib_EQ);
+  SmallVector<std::string, 12> BCLibs;
+  auto Res = DriverArgs.getAllArgValues(options::OPT_hip_device_lib_EQ);
+  for (auto Lib : Res) {
+    BCLibs.push_back(Lib);
+  }
   if (!BCLibs.empty()) {
     for (auto Lib : BCLibs)
       addBCLib(getDriver(), DriverArgs, CC1Args, LibraryPaths, Lib,
@@ -650,86 +620,58 @@ void AMDGPUOpenMPToolChain::addClangTargetOptions(
       return;
     }
 
-    // If device debugging turned on, add specially built bc files
-    std::string lib_debug_path = FindDebugInLibraryPath();
-    if (!lib_debug_path.empty()) {
-      LibraryPaths.push_back(
-          DriverArgs.MakeArgString(lib_debug_path + "/libdevice"));
-      LibraryPaths.push_back(DriverArgs.MakeArgString(lib_debug_path));
-    }
-
-    // Add compiler path libdevice last as lowest priority search
-    LibraryPaths.push_back(
-        DriverArgs.MakeArgString(getDriver().Dir + "/../amdgcn/bitcode"));
-    LibraryPaths.push_back(
-        DriverArgs.MakeArgString(getDriver().Dir + "/../../amdgcn/bitcode"));
-    LibraryPaths.push_back(
-        DriverArgs.MakeArgString(getDriver().Dir + "/../lib/libdevice"));
-    LibraryPaths.push_back(
-        DriverArgs.MakeArgString(getDriver().Dir + "/../lib"));
-    LibraryPaths.push_back(
-        DriverArgs.MakeArgString(getDriver().Dir + "/../../lib/libdevice"));
-    LibraryPaths.push_back(
-	DriverArgs.MakeArgString(getDriver().Dir + "/../../lib"));
-
     std::string LibDeviceFile = RocmInstallation.getLibDeviceFile(CanonArch);
     if (LibDeviceFile.empty()) {
       getDriver().Diag(diag::err_drv_no_rocm_device_lib) << 1 << TargetID;
       return;
     }
 
-    // If --hip-device-lib is not set, add the default bitcode libraries.
-    // TODO: There are way too many flags that change this. Do we need to check
-    // them all?
-    bool DAZ = DriverArgs.hasFlag(options::OPT_fcuda_flush_denormals_to_zero,
-                                  options::OPT_fno_cuda_flush_denormals_to_zero,
-                                  getDefaultDenormsAreZeroForTarget(Kind));
-    // TODO: Check standard C++ flags?
-    bool FiniteOnly = false;
-    bool UnsafeMathOpt = false;
-    bool FastRelaxedMath = false;
-    bool CorrectSqrt = true;
-    bool Wave64 = isWave64(DriverArgs, Kind);
-
     // Add the HIP specific bitcode library.
-    llvm::SmallVector<std::string, 12> BCLibs;
     BCLibs.push_back(RocmInstallation.getHIPPath().str());
-
-    // Add the generic set of libraries.
-    BCLibs.append(RocmInstallation.getCommonBitcodeLibs(
-        DriverArgs, LibDeviceFile, Wave64, DAZ, FiniteOnly, UnsafeMathOpt,
-        FastRelaxedMath, CorrectSqrt));
-
-    llvm::for_each(BCLibs, [&](StringRef BCFile) {
-      CC1Args.push_back("-mlink-builtin-bitcode");
-      CC1Args.push_back(DriverArgs.MakeArgString(BCFile));
-    });
   }
 
   std::string BitcodeSuffix;
   if (DriverArgs.hasFlag(options::OPT_fopenmp_target_new_runtime,
                          options::OPT_fno_openmp_target_new_runtime, false)) {
     BitcodeSuffix = "new-amdgpu-" + GPUArch.str();
-    addOpenMPDeviceRTL(getDriver(), DriverArgs, CC1Args, BitcodeSuffix,
-                       getTriple());
+  }  else
+    BitcodeSuffix = "amdgcn-" + GPUArch.str();
+
+  addOpenMPDeviceRTL(getDriver(), DriverArgs, CC1Args, BitcodeSuffix,
+                     getTriple());
+  for (auto Lib : DriverArgs.getAllArgValues(options::OPT_hip_device_lib_EQ)) {
+    BCLibs.push_back(DriverArgs.MakeArgString(Lib));
   }
 
-  if (!DriverArgs.hasArg(options::OPT_l))
-    return;
+  llvm::StringRef WaveFrontSizeBC;
+  std::string GFXVersion = GPUArch.drop_front(3).str();
+  if (stoi(GFXVersion) < 1000)
+    WaveFrontSizeBC = "oclc_wavefrontsize64_on.bc";
+  else
+    WaveFrontSizeBC = "oclc_wavefrontsize64_off.bc";
 
-  auto Lm = DriverArgs.getAllArgValues(options::OPT_l);
-  bool HasLibm = false;
-  for (auto &Lib : Lm) {
-    if (Lib == "m") {
-      HasLibm = true;
-      break;
-    }
+  // FIXME: remove double link of hip aompextras, ockl, and WaveFrontSizeBC
+  if (DriverArgs.hasArg(options::OPT_cuda_device_only))
+    BCLibs.append({DriverArgs.MakeArgString("libomptarget-amdgcn-" + GPUArch + ".bc"),
+                   "ockl.bc", std::string(WaveFrontSizeBC)});
+  else {
+    BCLibs.append(
+        {DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libomptarget-amdgcn-" + GPUArch + ".bc"),
+         DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libdevice/libaompextras-amdgcn-" + GPUArch + ".bc"),
+         "/home/pdhaliwal/rocm/aomp/amdgcn/bitcode/ockl.bc", DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libdevice/libbc-hostrpc-amdgcn.a"),
+         "/home/pdhaliwal/rocm/aomp/lib/libdevice/hostrpc-amdgcn.bc",
+         DriverArgs.MakeArgString("/home/pdhaliwal/rocm/aomp/lib/libomptarget-amdgcn-" + GPUArch + ".bc"),
+         "/home/pdhaliwal/rocm/aomp/amdgcn/bitcode/oclc_finite_only_on.bc",
+         "/home/pdhaliwal/rocm/aomp/amdgcn/bitcode/" + std::string(WaveFrontSizeBC) });
   }
 
+  bool HasLibm = true;
   if (HasLibm) {
-    SmallVector<std::string, 12> BCLibs =
+    SmallVector<std::string, 12> BCLibsT =
         getCommonDeviceLibNames(DriverArgs, GPUArch.str());
-    llvm::for_each(BCLibs, [&](StringRef BCFile) {
+    for (auto Lib : BCLibsT)
+      BCLibs.push_back(Lib);
+    std::for_each(BCLibs.begin(), BCLibs.end(), [&](StringRef BCFile) {
       CC1Args.push_back("-mlink-builtin-bitcode");
       CC1Args.push_back(DriverArgs.MakeArgString(BCFile));
     });
